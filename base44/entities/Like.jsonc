@@ -1,0 +1,28 @@
+{
+  "name": "Like",
+  "type": "object",
+  "properties": {
+    "session_id": {
+      "type": "string"
+    },
+    "user_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "session_id",
+    "user_id"
+  ],
+  "rls": {
+    "create": {
+      "data.user_id": "{{user.id}}"
+    },
+    "read": {
+      "data.user_id": "{{user.id}}"
+    },
+    "update": false,
+    "delete": {
+      "data.user_id": "{{user.id}}"
+    }
+  }
+}
