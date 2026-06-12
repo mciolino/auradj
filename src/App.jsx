@@ -22,6 +22,7 @@ import Discover from '@/pages/Discover';
 import DJSession from '@/pages/DJSession';
 import MixDetail from '@/pages/MixDetail';
 import Profile from '@/pages/Profile';
+import DevProfile from '@/pages/DevProfile';
 import ConnectedServices from '@/pages/ConnectedServices';
 import Analytics from '@/pages/Analytics';
 import MixStats from '@/pages/MixStats';
@@ -59,6 +60,7 @@ const AuthenticatedApp = () => {
         <Route path="/session/:id" element={<DJSession />} />
         <Route path="/mix/:id" element={<MixDetail />} />
         <Route path="/profile/:userId" element={<Profile />} />
+        <Route path="/dev/:userId" element={<DevProfile />} />
         <Route path="/services" element={<ConnectedServices />} />
         <Route path="/analytics" element={<Analytics />} />
         <Route path="/mix-stats" element={<MixStats />} />
