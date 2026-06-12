@@ -1,0 +1,78 @@
+{
+  "name": "Track",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "audio_url": {
+      "type": "string"
+    },
+    "cover_art_url": {
+      "type": "string"
+    },
+    "genre": {
+      "type": "string"
+    },
+    "mood": {
+      "type": "string"
+    },
+    "bpm": {
+      "type": "number"
+    },
+    "energy": {
+      "type": "number"
+    },
+    "duration_seconds": {
+      "type": "number"
+    },
+    "prompt_used": {
+      "type": "string"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "play_count": {
+      "type": "number",
+      "default": 0
+    },
+    "likes": {
+      "type": "number",
+      "default": 0
+    },
+    "is_public": {
+      "type": "boolean",
+      "default": true
+    },
+    "session_id": {
+      "type": "string"
+    }
+  },
+  "required": [
+    "title"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "data.is_public": true
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        }
+      ]
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}
