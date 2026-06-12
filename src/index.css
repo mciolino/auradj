@@ -1,0 +1,136 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Syne:wght@400;500;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* AuraDJ is always dark — music apps live in the dark */
+  :root {
+    --background: 220 13% 7%;        /* #0f1013 — deep near-black */
+    --foreground: 0 0% 95%;
+    --card: 220 13% 10%;             /* #161820 — card surface */
+    --card-foreground: 0 0% 95%;
+    --popover: 220 13% 12%;
+    --popover-foreground: 0 0% 95%;
+    --primary: 263 75% 62%;          /* #7c3aed-ish purple */
+    --primary-foreground: 0 0% 100%;
+    --secondary: 220 13% 15%;        /* hover surface */
+    --secondary-foreground: 0 0% 85%;
+    --muted: 220 13% 14%;
+    --muted-foreground: 0 0% 55%;
+    --accent: 263 50% 20%;           /* deep purple tint */
+    --accent-foreground: 263 75% 80%;
+    --destructive: 0 62% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 13% 18%;
+    --input: 220 13% 16%;
+    --ring: 263 75% 62%;
+    --radius: 0.75rem;
+    --font-heading: 'Syne', ui-sans-serif, system-ui, sans-serif;
+    --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Syne', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+    --player-height: 88px;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+
+  html {
+    color-scheme: dark;
+  }
+
+  body {
+    @apply bg-background text-foreground font-body;
+    padding-bottom: var(--player-height);
+    background-color: hsl(220, 13%, 7%);
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-heading;
+  }
+}
+
+/* ── Wave bar animation ── */
+@keyframes waveBar {
+  0%, 100% { transform: scaleY(0.25); }
+  50%       { transform: scaleY(1); }
+}
+
+.wave-bar {
+  animation: waveBar 0.9s ease-in-out infinite;
+  transform-origin: bottom;
+}
+
+.wave-bar:nth-child(1) { animation-delay: 0s;    animation-duration: 0.80s; }
+.wave-bar:nth-child(2) { animation-delay: 0.10s; animation-duration: 0.95s; }
+.wave-bar:nth-child(3) { animation-delay: 0.20s; animation-duration: 0.85s; }
+.wave-bar:nth-child(4) { animation-delay: 0.15s; animation-duration: 1.00s; }
+.wave-bar:nth-child(5) { animation-delay: 0.05s; animation-duration: 0.90s; }
+.wave-bar:nth-child(6) { animation-delay: 0.25s; animation-duration: 0.75s; }
+.wave-bar:nth-child(7) { animation-delay: 0.12s; animation-duration: 0.95s; }
+.wave-bar:nth-child(8) { animation-delay: 0.08s; animation-duration: 0.85s; }
+
+/* ── Pulse glow on CTA ── */
+@keyframes pulse-glow {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(263 75% 62% / 0.35); }
+  50%       { box-shadow: 0 0 0 10px hsl(263 75% 62% / 0); }
+}
+.pulse-glow { animation: pulse-glow 2.2s ease-in-out infinite; }
+
+/* ── Gradient shimmer on hero heading ── */
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position: 200% center; }
+}
+.text-shimmer {
+  background: linear-gradient(90deg,
+    hsl(263 75% 75%),
+    hsl(300 75% 75%),
+    hsl(263 75% 75%)
+  );
+  background-size: 200% auto;
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  animation: shimmer 4s linear infinite;
+}
+
+/* ── Card glow on hover ── */
+.mix-card-glow:hover {
+  box-shadow: 0 0 0 1px hsl(263 75% 62% / 0.3),
+              0 8px 32px hsl(263 75% 62% / 0.15);
+}
+
+/* ── Vinyl spin on active play ── */
+@keyframes vinyl-spin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+.vinyl-spin { animation: vinyl-spin 3s linear infinite; }
+.vinyl-spin-paused { animation-play-state: paused; }
+
+/* ── Custom scrollbar ── */
+::-webkit-scrollbar       { width: 4px; height: 4px; }
+::-webkit-scrollbar-track { background: transparent; }
+::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 2px; }
+
+/* ── Glass surface utility ── */
+.glass {
+  background: hsl(220 13% 10% / 0.85);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid hsl(220 13% 20% / 0.6);
+}
+
+/* ── Gradient mesh background for hero ── */
+.hero-mesh {
+  background:
+    radial-gradient(ellipse 80% 50% at 20% 40%, hsl(263 75% 62% / 0.12) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 40% at 80% 60%, hsl(300 65% 55% / 0.08) 0%, transparent 60%),
+    hsl(220, 13%, 7%);
+}
