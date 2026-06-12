@@ -1,37 +1,59 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Syne:wght@400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Unbounded:wght@400;500;600;700;800;900&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 @layer base {
-  /* AuraDJ is always dark — music apps live in the dark */
   :root {
-    --background: 220 13% 7%;        /* #0f1013 — deep near-black */
-    --foreground: 0 0% 95%;
-    --card: 220 13% 10%;             /* #161820 — card surface */
-    --card-foreground: 0 0% 95%;
-    --popover: 220 13% 12%;
-    --popover-foreground: 0 0% 95%;
-    --primary: 263 75% 62%;          /* #7c3aed-ish purple */
-    --primary-foreground: 0 0% 100%;
-    --secondary: 220 13% 15%;        /* hover surface */
-    --secondary-foreground: 0 0% 85%;
-    --muted: 220 13% 14%;
-    --muted-foreground: 0 0% 55%;
-    --accent: 263 50% 20%;           /* deep purple tint */
-    --accent-foreground: 263 75% 80%;
+    /* Light mode — stark white/black editorial */
+    --background: 0 0% 97%;
+    --foreground: 0 0% 4%;
+    --card: 0 0% 100%;
+    --card-foreground: 0 0% 4%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 0 0% 4%;
+    --primary: 72 100% 50%;          /* electric lime #C8FF00 */
+    --primary-foreground: 0 0% 4%;
+    --secondary: 0 0% 93%;
+    --secondary-foreground: 0 0% 20%;
+    --muted: 0 0% 91%;
+    --muted-foreground: 0 0% 44%;
+    --accent: 72 100% 50%;
+    --accent-foreground: 0 0% 4%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 0 0% 86%;
+    --input: 0 0% 86%;
+    --ring: 72 100% 50%;
+    --radius: 0.25rem;               /* almost square — editorial feel */
+    --font-heading: 'Unbounded', ui-sans-serif, system-ui, sans-serif;
+    --font-body: 'Space Grotesk', ui-sans-serif, system-ui, sans-serif;
+    --font-display: 'Unbounded', ui-sans-serif, system-ui, sans-serif;
+    --font-mono: 'Space Mono', ui-monospace, monospace;
+    --player-height: 80px;
+  }
+
+  .dark {
+    --background: 0 0% 0%;           /* pure black */
+    --foreground: 0 0% 97%;
+    --card: 0 0% 5%;
+    --card-foreground: 0 0% 97%;
+    --popover: 0 0% 5%;
+    --popover-foreground: 0 0% 97%;
+    --primary: 72 100% 50%;          /* lime stays */
+    --primary-foreground: 0 0% 4%;
+    --secondary: 0 0% 9%;
+    --secondary-foreground: 0 0% 80%;
+    --muted: 0 0% 10%;
+    --muted-foreground: 0 0% 50%;
+    --accent: 72 100% 8%;
+    --accent-foreground: 72 100% 70%;
     --destructive: 0 62% 50%;
     --destructive-foreground: 0 0% 98%;
-    --border: 220 13% 18%;
-    --input: 220 13% 16%;
-    --ring: 263 75% 62%;
-    --radius: 0.75rem;
-    --font-heading: 'Syne', ui-sans-serif, system-ui, sans-serif;
-    --font-body: 'Inter', ui-sans-serif, system-ui, sans-serif;
-    --font-display: 'Syne', ui-sans-serif, system-ui, sans-serif;
-    --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
-    --player-height: 88px;
+    --border: 0 0% 12%;
+    --input: 0 0% 12%;
+    --ring: 72 100% 50%;
   }
 }
 
@@ -41,96 +63,102 @@
   }
 
   html {
-    color-scheme: dark;
+    /* Force dark by default — this is a music app */
+    @apply dark;
   }
 
   body {
     @apply bg-background text-foreground font-body;
     padding-bottom: var(--player-height);
-    background-color: hsl(220, 13%, 7%);
+    font-feature-settings: 'ss01' on, 'cv01' on;
+    -webkit-font-smoothing: antialiased;
   }
 
   h1, h2, h3, h4, h5, h6 {
     @apply font-heading;
+    letter-spacing: -0.02em;
   }
 }
 
-/* ── Wave bar animation ── */
+/* ── Typography helpers ── */
+.font-body { font-family: var(--font-body); }
+.font-heading { font-family: var(--font-heading); }
+.font-mono { font-family: var(--font-mono); }
+
+/* ── Ticker / marquee ── */
+@keyframes marquee {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+.marquee-track {
+  display: flex;
+  width: max-content;
+  animation: marquee 18s linear infinite;
+}
+.marquee-track:hover { animation-play-state: paused; }
+
+/* ── Waveform bars ── */
 @keyframes waveBar {
-  0%, 100% { transform: scaleY(0.25); }
+  0%, 100% { transform: scaleY(0.2); }
   50%       { transform: scaleY(1); }
 }
-
 .wave-bar {
   animation: waveBar 0.9s ease-in-out infinite;
   transform-origin: bottom;
 }
+.wave-bar:nth-child(1) { animation-delay: 0s; }
+.wave-bar:nth-child(2) { animation-delay: 0.09s; }
+.wave-bar:nth-child(3) { animation-delay: 0.18s; }
+.wave-bar:nth-child(4) { animation-delay: 0.27s; }
+.wave-bar:nth-child(5) { animation-delay: 0.36s; }
+.wave-bar:nth-child(6) { animation-delay: 0.27s; }
+.wave-bar:nth-child(7) { animation-delay: 0.18s; }
+.wave-bar:nth-child(8) { animation-delay: 0.09s; }
 
-.wave-bar:nth-child(1) { animation-delay: 0s;    animation-duration: 0.80s; }
-.wave-bar:nth-child(2) { animation-delay: 0.10s; animation-duration: 0.95s; }
-.wave-bar:nth-child(3) { animation-delay: 0.20s; animation-duration: 0.85s; }
-.wave-bar:nth-child(4) { animation-delay: 0.15s; animation-duration: 1.00s; }
-.wave-bar:nth-child(5) { animation-delay: 0.05s; animation-duration: 0.90s; }
-.wave-bar:nth-child(6) { animation-delay: 0.25s; animation-duration: 0.75s; }
-.wave-bar:nth-child(7) { animation-delay: 0.12s; animation-duration: 0.95s; }
-.wave-bar:nth-child(8) { animation-delay: 0.08s; animation-duration: 0.85s; }
-
-/* ── Pulse glow on CTA ── */
-@keyframes pulse-glow {
-  0%, 100% { box-shadow: 0 0 0 0 hsl(263 75% 62% / 0.35); }
-  50%       { box-shadow: 0 0 0 10px hsl(263 75% 62% / 0); }
-}
-.pulse-glow { animation: pulse-glow 2.2s ease-in-out infinite; }
-
-/* ── Gradient shimmer on hero heading ── */
-@keyframes shimmer {
-  0%   { background-position: -200% center; }
-  100% { background-position: 200% center; }
-}
-.text-shimmer {
-  background: linear-gradient(90deg,
-    hsl(263 75% 75%),
-    hsl(300 75% 75%),
-    hsl(263 75% 75%)
-  );
-  background-size: 200% auto;
-  -webkit-background-clip: text;
-  background-clip: text;
-  -webkit-text-fill-color: transparent;
-  animation: shimmer 4s linear infinite;
+/* ── Noise grain overlay (optional) ── */
+.grain::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 9999;
+  opacity: 0.025;
 }
 
-/* ── Card glow on hover ── */
-.mix-card-glow:hover {
-  box-shadow: 0 0 0 1px hsl(263 75% 62% / 0.3),
-              0 8px 32px hsl(263 75% 62% / 0.15);
+/* ── Lime glow ── */
+@keyframes limeGlow {
+  0%, 100% { box-shadow: 0 0 0 0 hsl(72 100% 50% / 0.35); }
+  50%       { box-shadow: 0 0 0 10px hsl(72 100% 50% / 0); }
 }
+.glow-lime { animation: limeGlow 2.4s ease-in-out infinite; }
 
-/* ── Vinyl spin on active play ── */
-@keyframes vinyl-spin {
-  from { transform: rotate(0deg); }
-  to   { transform: rotate(360deg); }
-}
-.vinyl-spin { animation: vinyl-spin 3s linear infinite; }
-.vinyl-spin-paused { animation-play-state: paused; }
-
-/* ── Custom scrollbar ── */
-::-webkit-scrollbar       { width: 4px; height: 4px; }
+/* ── Scrollbar ── */
+::-webkit-scrollbar { width: 3px; height: 3px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: hsl(var(--border)); border-radius: 2px; }
 
-/* ── Glass surface utility ── */
-.glass {
-  background: hsl(220 13% 10% / 0.85);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border: 1px solid hsl(220 13% 20% / 0.6);
+/* ── Diagonal stripe (for empty states / accents) ── */
+.stripe-bg {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 6px,
+    hsl(var(--border) / 0.4) 6px,
+    hsl(var(--border) / 0.4) 7px
+  );
 }
 
-/* ── Gradient mesh background for hero ── */
-.hero-mesh {
-  background:
-    radial-gradient(ellipse 80% 50% at 20% 40%, hsl(263 75% 62% / 0.12) 0%, transparent 60%),
-    radial-gradient(ellipse 60% 40% at 80% 60%, hsl(300 65% 55% / 0.08) 0%, transparent 60%),
-    hsl(220, 13%, 7%);
+/* ── Sharp button reset ── */
+.btn-sharp {
+  @apply rounded-none border border-foreground px-5 py-2.5 text-sm font-semibold uppercase tracking-widest transition-all duration-150;
+}
+.btn-sharp:hover {
+  @apply bg-foreground text-background;
+}
+.btn-sharp-lime {
+  @apply rounded-none bg-primary text-primary-foreground px-5 py-2.5 text-sm font-semibold uppercase tracking-widest transition-all duration-150;
+}
+.btn-sharp-lime:hover {
+  @apply opacity-85;
 }
