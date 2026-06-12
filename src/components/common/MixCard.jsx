@@ -1,11 +1,14 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
 import { usePlayer } from '@/context/PlayerContext';
-import { Button } from '@/components/ui/button';
-import { Play, Pause, Heart, Music, BarChart2 } from 'lucide-react';
-import { motion } from 'framer-motion';
+import { Play, Pause, Music } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
+/**
+ * MixCard — record sleeve aesthetic.
+ * Square full-bleed art. On hover: dark overlay with metadata in stark mono type.
+ * No rounded corners. No badge chips. No drop shadows.
+ */
 export default function MixCard({ session, className, creatorName, creatorId }) {
   const { currentTrack, isPlaying, play, togglePlay } = usePlayer();
   const isCurrentSession = currentTrack?.session_id === session.id;
@@ -13,117 +16,99 @@ export default function MixCard({ session, className, creatorName, creatorId }) 
 
   const handlePlay = (e) => {
     e.preventDefault();
+    e.stopPropagation();
     if (isCurrentSession) togglePlay();
-    else if (session.track_ids?.length > 0) {
-      play({ id: session.id, session_id: session.id, title: session.title, cover_art_url: session.cover_art_url, genre: session.genre, audio_url: null }, []);
-    }
+    else play({
+      id: session.id,
+      session_id: session.id,
+      title: session.title,
+      cover_art_url: session.cover_art_url,
+      genre: session.genre,
+      audio_url: null,
+    }, []);
   };
 
   return (
-    <motion.div
-      whileHover={{ y: -4 }}
-      transition={{ type: 'spring', stiffness: 300, damping: 24 }}
-    >
-      <Link to={`/mix/${session.id}`} className={cn('block group', className)}>
-        {/* Cover art */}
-        <div className="relative rounded-xl overflow-hidden bg-secondary aspect-square mb-3 mix-card-glow transition-all duration-300">
-          {session.cover_art_url ? (
-            <img
-              src={session.cover_art_url}
-              alt={session.title}
-              className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-primary/30 to-primary/5">
-              <Music className="w-12 h-12 text-primary/40" />
-            </div>
-          )}
+    <Link to={`/mix/${session.id}`} className={cn('block group', className)}>
+      {/* ── Sleeve art ── */}
+      <div className="relative aspect-square overflow-hidden bg-secondary">
 
-          {/* Dark scrim + play button */}
-          <div className="absolute inset-0 bg-black/0 group-hover:bg-black/40 transition-colors duration-200 flex items-end justify-end p-2 pointer-events-none">
-            <motion.div
-              initial={{ scale: 0.8, opacity: 0 }}
-              animate={isActiveAndPlaying ? { scale: 1, opacity: 1 } : {}}
-              whileHover={{ scale: 1.1 }}
-              className="pointer-events-auto"
-            >
-              <Button
-                size="icon"
-                onClick={handlePlay}
-                className={cn(
-                  'w-11 h-11 rounded-full shadow-xl transition-all duration-200 pointer-events-auto',
-                  'bg-primary text-primary-foreground hover:bg-primary/90',
-                  'hover:scale-105',
-                  isActiveAndPlaying
-                    ? 'opacity-100 translate-y-0'
-                    : 'opacity-0 translate-y-2 group-hover:opacity-100 group-hover:translate-y-0'
-                )}
-                style={{ transition: 'opacity 0.2s, transform 0.2s' }}
-                aria-label={isActiveAndPlaying ? 'Pause' : 'Play'}
-              >
-                {isActiveAndPlaying
-                  ? <Pause className="w-4 h-4" />
-                  : <Play className="w-4 h-4 ml-0.5" />
-                }
-              </Button>
-            </motion.div>
+        {/* Art */}
+        {session.cover_art_url ? (
+          <img
+            src={session.cover_art_url}
+            alt={session.title}
+            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+          />
+        ) : (
+          <div className="w-full h-full flex items-center justify-center bg-muted">
+            <Music className="w-8 h-8 text-muted-foreground/30" />
           </div>
+        )}
 
-          {/* Active playing indicator — pulsing ring */}
-          {isActiveAndPlaying && (
-            <div className="absolute inset-0 rounded-xl ring-2 ring-primary/60 pointer-events-none" />
-          )}
+        {/* Hover overlay — full black takeover with grid data */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/80 transition-all duration-200 flex flex-col justify-between p-3 pointer-events-none group-hover:pointer-events-auto">
 
-          {/* Duration badge */}
-          {session.duration_minutes > 0 && (
-            <div className="absolute top-2 left-2 px-1.5 py-0.5 rounded-md bg-black/60 backdrop-blur-sm text-[10px] text-white/80 font-medium">
-              {session.duration_minutes}m
-            </div>
-          )}
-        </div>
-
-        {/* Metadata */}
-        <div>
-          <h3 className="font-semibold text-sm truncate group-hover:text-primary transition-colors duration-150 leading-tight">
-            {session.title}
-          </h3>
-          <div className="flex items-center gap-2 mt-1 text-[11px] text-muted-foreground">
+          {/* Top meta */}
+          <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-75">
             {session.genre && (
-              <span className="px-1.5 py-0.5 rounded-full bg-accent/60 text-accent-foreground text-[10px] font-medium">
+              <span className="font-mono text-[9px] uppercase tracking-[0.2em] text-primary">
                 {session.genre}
               </span>
             )}
-            {session.bpm > 0 && <span>{session.bpm} BPM</span>}
-          </div>
-          <div className="flex items-center gap-3 mt-1.5 text-[11px] text-muted-foreground">
-            {session.play_count > 0 && (
-              <span className="flex items-center gap-1">
-                <BarChart2 className="w-3 h-3" /> {session.play_count.toLocaleString()}
-              </span>
-            )}
-            {session.likes > 0 && (
-              <span className="flex items-center gap-1">
-                <Heart className="w-3 h-3" /> {session.likes.toLocaleString()}
-              </span>
+            {session.bpm && (
+              <p className="font-mono text-[9px] text-white/50 mt-0.5">{session.bpm} BPM</p>
             )}
           </div>
 
-          {creatorName && creatorId && (
-            <Link
-              to={`/profile/${creatorId}`}
-              onClick={e => e.stopPropagation()}
-              className="flex items-center gap-1.5 mt-2 group/creator"
+          {/* Center play */}
+          <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-150">
+            <button
+              onClick={handlePlay}
+              className="w-10 h-10 bg-primary text-primary-foreground flex items-center justify-center hover:scale-105 transition-transform"
+              aria-label={isActiveAndPlaying ? 'Pause' : 'Play'}
             >
-              <div className="w-4 h-4 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
-                <span className="text-[8px] font-bold text-primary">{creatorName[0]?.toUpperCase()}</span>
-              </div>
-              <span className="text-[11px] text-muted-foreground group-hover/creator:text-primary transition-colors truncate">
+              {isActiveAndPlaying
+                ? <Pause className="w-4 h-4" />
+                : <Play className="w-4 h-4 ml-0.5" />
+              }
+            </button>
+          </div>
+
+          {/* Bottom creator */}
+          {creatorName && (
+            <div className="opacity-0 group-hover:opacity-100 transition-opacity duration-150 delay-75 self-end">
+              <p className="font-mono text-[9px] text-white/50 uppercase tracking-wider truncate">
                 {creatorName}
-              </span>
-            </Link>
+              </p>
+            </div>
           )}
         </div>
-      </Link>
-    </motion.div>
+
+        {/* Playing indicator — top-left lime bar */}
+        {isActiveAndPlaying && (
+          <div className="absolute top-0 left-0 w-1 h-full bg-primary" />
+        )}
+      </div>
+
+      {/* ── Below sleeve — minimal label-style text ── */}
+      <div className="pt-2 pb-0">
+        <p className="font-mono text-[11px] font-bold uppercase tracking-tight truncate leading-tight group-hover:text-primary transition-colors">
+          {session.title}
+        </p>
+        <div className="flex items-center gap-2 mt-0.5">
+          {session.mood && (
+            <span className="font-mono text-[9px] text-muted-foreground uppercase tracking-wider">
+              {session.mood}
+            </span>
+          )}
+          {session.play_count > 0 && (
+            <span className="font-mono text-[9px] text-muted-foreground">
+              {session.play_count.toLocaleString()} plays
+            </span>
+          )}
+        </div>
+      </div>
+    </Link>
   );
 }
