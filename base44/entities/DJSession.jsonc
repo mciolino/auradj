@@ -1,0 +1,97 @@
+{
+  "name": "DJSession",
+  "type": "object",
+  "properties": {
+    "title": {
+      "type": "string"
+    },
+    "cover_art_url": {
+      "type": "string"
+    },
+    "genre": {
+      "type": "string"
+    },
+    "mood": {
+      "type": "string"
+    },
+    "bpm": {
+      "type": "number"
+    },
+    "energy_level": {
+      "type": "number",
+      "default": 5
+    },
+    "track_ids": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "chat_history": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "properties": {
+          "role": {
+            "type": "string"
+          },
+          "content": {
+            "type": "string"
+          },
+          "timestamp": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "play_count": {
+      "type": "number",
+      "default": 0
+    },
+    "likes": {
+      "type": "number",
+      "default": 0
+    },
+    "is_public": {
+      "type": "boolean",
+      "default": false
+    },
+    "is_saved": {
+      "type": "boolean",
+      "default": false
+    },
+    "duration_minutes": {
+      "type": "number"
+    },
+    "tags": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "required": [
+    "title"
+  ],
+  "rls": {
+    "create": {
+      "created_by_id": "{{user.id}}"
+    },
+    "read": {
+      "$or": [
+        {
+          "data.is_public": true
+        },
+        {
+          "created_by_id": "{{user.id}}"
+        }
+      ]
+    },
+    "update": {
+      "created_by_id": "{{user.id}}"
+    },
+    "delete": {
+      "created_by_id": "{{user.id}}"
+    }
+  }
+}
