@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useSpotify } from '@/context/SpotifyContext';
 import { Button } from '@/components/ui/button';
-import { Play, Pause, SkipForward, SkipBack, Loader2, Music, ExternalLink } from 'lucide-react';
+import { Play, Pause, SkipForward, SkipBack, Loader2, Music } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function SpotifyPlayer({ searchQuery }) {
