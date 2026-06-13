@@ -1,6 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useMixer } from '@/context/MixerContext';
+import { useSpotify } from '@/context/SpotifyContext';
+import SpotifyDeckBridge from './SpotifyDeckBridge';
 import TrackSearch from './TrackSearch';
 import { toast } from 'sonner';
 import {
@@ -581,18 +583,39 @@ function MixerCenter({ queue, onRemoveFromQueue, onLoadFromQueue }) {
 }
 
 // ─── Main export ──────────────────────────────────────────────────────────────
-export default function DJMixer({ tracks = [] }) {
+export default function DJMixer({ tracks = [], onTrackLoaded }) {
   const { loadTrack } = useMixer();
+  const { playTrack: spotifyPlayTrack, player: spotifyPlayer, ready: spotifyReady } = useSpotify();
   const [searchOpen,  setSearchOpen]  = useState(false);
   const [searchSide,  setSearchSide]  = useState('A');
   const [queue,       setQueue]       = useState([]);
+  // Tracks which deck is currently driven by Spotify SDK (null = Tone.js for both)
+  const spotifyDeckRef = useRef(null);
 
   const handleOpenSearch = (side) => { setSearchSide(side); setSearchOpen(true); };
 
+  // Tone.js path — 30s preview or any audio_url
   const handleLoadDeck = useCallback((side, track) => {
+    spotifyDeckRef.current = null; // clear Spotify ownership
     loadTrack(side, track);
+    onTrackLoaded?.(track);
     setSearchOpen(false);
-  }, [loadTrack]);
+  }, [loadTrack, onTrackLoaded]);
+
+  // Spotify SDK path — full track via Premium
+  const handleSpotifyDeck = useCallback(async (side, track) => {
+    if (!spotifyReady || !track.spotify_uri) {
+      // Fallback to preview if SDK not ready
+      if (track.preview_url) {
+        handleLoadDeck(side, { ...track, audio_url: track.preview_url });
+      }
+      return;
+    }
+    spotifyDeckRef.current = side;
+    await spotifyPlayTrack(track.spotify_uri);
+    onTrackLoaded?.(track);
+    setSearchOpen(false);
+  }, [spotifyReady, spotifyPlayTrack, handleLoadDeck, onTrackLoaded]);
 
   const handleAddToQueue = useCallback((track) => {
     setQueue(prev => [...prev, track]);
@@ -603,14 +626,21 @@ export default function DJMixer({ tracks = [] }) {
   }, []);
 
   const handleLoadFromQueue = useCallback((side, track, idx) => {
-    loadTrack(side, track);
+    if (spotifyReady && track.spotify_uri) {
+      handleSpotifyDeck(side, track);
+    } else {
+      handleLoadDeck(side, { ...track, audio_url: track.preview_url || track.audio_url });
+    }
     setQueue(prev => prev.filter((_,i) => i !== idx));
     toast.success(`"${track.title}" → Deck ${side}`);
-  }, [loadTrack]);
+  }, [spotifyReady, handleSpotifyDeck, handleLoadDeck]);
 
   return (
     <div className="rounded-2xl border border-white/10 overflow-hidden"
       style={{ background:'linear-gradient(180deg,#0c0c0c 0%,#000 100%)', boxShadow:'0 0 80px rgba(200,255,0,0.03),0 0 80px rgba(0,210,255,0.03)' }}>
+
+      {/* Spotify bridge — syncs SDK state into MixerContext */}
+      <SpotifyDeckBridge spotifyDeckRef={spotifyDeckRef} />
 
       {/* Header */}
       <div className="flex items-center justify-between px-5 py-2.5 border-b border-white/8"
@@ -619,6 +649,12 @@ export default function DJMixer({ tracks = [] }) {
           <Disc3 className="w-4 h-4 text-[#C8FF00]" />
           <span className="text-xs font-black font-mono uppercase tracking-widest text-white/60">AuraDJ Mixer Pro</span>
           <div className="w-1.5 h-1.5 rounded-full bg-[#C8FF00] animate-pulse" />
+          {spotifyReady && (
+            <span className="px-2 py-0.5 rounded-full text-[9px] font-mono font-bold"
+              style={{ background:'rgba(29,185,84,0.15)', color:'#1DB954' }}>
+              Spotify ●
+            </span>
+          )}
         </div>
         <div className="flex items-center gap-2">
           {queue.length > 0 && (
@@ -638,7 +674,7 @@ export default function DJMixer({ tracks = [] }) {
       {/* Search drawer */}
       <AnimatePresence>
         {searchOpen && (
-          <motion.div initial={{ height:0,opacity:0 }} animate={{ height:420,opacity:1 }} exit={{ height:0,opacity:0 }}
+          <motion.div initial={{ height:0,opacity:0 }} animate={{ height:460,opacity:1 }} exit={{ height:0,opacity:0 }}
             transition={{ type:'spring', stiffness:300, damping:30 }}
             className="border-b border-white/8 overflow-hidden"
             style={{ background:'#0a0a0a' }}>
@@ -659,9 +695,10 @@ export default function DJMixer({ tracks = [] }) {
                 </button>
               </div>
             </div>
-            <div className="h-[370px]">
+            <div className="h-[410px]">
               <TrackSearch
                 onLoadDeck={handleLoadDeck}
+                onSpotifyDeck={handleSpotifyDeck}
                 onAddToQueue={handleAddToQueue}
                 savedTracks={tracks}
               />
