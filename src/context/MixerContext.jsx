@@ -392,7 +392,7 @@ export function MixerProvider({ children }) {
   }, []);
 
   const value = {
-    deckState, eq, activeFx, crossfader, masterVolume, isRecording,
+    deckState, setDeckState, eq, activeFx, crossfader, masterVolume, isRecording,
     loadTrack, togglePlay, seek,
     setEQBand, setDeckVolume, setPitch, setCrossfader, setMasterVolume,
     syncBPM, toggleLoop, setLoopSize,
