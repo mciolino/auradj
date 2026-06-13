@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Globe, Radio, Loader2, Wand2, Save } from 'lucide-react';
+import { MessageSquare, Globe, Radio, Loader2, Wand2 } from 'lucide-react';
 import DJMixer from '@/components/mixer/DJMixer';
 import DJChatPanel from '@/components/session/DJChatPanel';
 import ForYouPanel from '@/components/session/ForYouPanel';
