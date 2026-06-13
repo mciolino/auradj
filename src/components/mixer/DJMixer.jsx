@@ -230,7 +230,7 @@ function EQKnob({ label, value, onChange, color }) {
 }
 
 // ─── Waveform ─────────────────────────────────────────────────────────────────
-function WaveStrip({ side, accentColor }) {
+function WaveStrip({ side, accentColor, onSeek }) {
   const { deckState, getAnalysis, seek } = useMixer();
   const ds = deckState[side];
   const canvasRef = useRef(null);
@@ -270,7 +270,7 @@ function WaveStrip({ side, accentColor }) {
   }, [ds.playing, ds.currentTime, ds.duration, accentColor, side]);
 
   return <canvas ref={canvasRef} className="w-full" style={{ height:48, display:'block', cursor:ds.duration?'pointer':'default' }}
-    onClick={e => { if (!ds.duration) return; const r=e.currentTarget.getBoundingClientRect(); seek(side,((e.clientX-r.left)/r.width)*ds.duration); }} />;
+    onClick={e => { if (!ds.duration) return; const r=e.currentTarget.getBoundingClientRect(); const pos=((e.clientX-r.left)/r.width)*ds.duration; onSeek ? onSeek(pos) : seek(side, pos); }} />;
 }
 
 // ─── Hot Cues ─────────────────────────────────────────────────────────────────
@@ -363,7 +363,7 @@ function VertFader({ value, onChange, color, label, min=0, max=100, step=1, unit
 }
 
 // ─── Deck ─────────────────────────────────────────────────────────────────────
-function Deck({ side, onOpenSearch }) {
+function Deck({ side, onOpenSearch, spotifyControls }) {
   const { deckState, eq, loadTrack, togglePlay, seek, setEQBand, setDeckVolume, setPitch, syncBPM } = useMixer();
   const ds = deckState[side]; const eqs = eq[side];
   const isLeft = side === 'A', accent = isLeft ? '#C8FF00' : '#00d2ff';
@@ -407,7 +407,7 @@ function Deck({ side, onOpenSearch }) {
           <div style={{ filter:`drop-shadow(0 0 24px ${accent}30)` }}>
             <Platter side={side} size={178} accentColor={accent} />
           </div>
-          <button onClick={() => ds.track && togglePlay(side)} disabled={!ds.track||ds.loading}
+          <button onClick={() => { if(spotifyControls?.isSpotifyDeck){ds.playing?spotifyControls.onPause():spotifyControls.onPlay();}else{ds.track&&togglePlay(side);} }} disabled={!ds.track||ds.loading}
             className="absolute inset-0 rounded-full flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity">
             <div className="w-14 h-14 rounded-full flex items-center justify-center" style={{ background:'rgba(0,0,0,0.65)', backdropFilter:'blur(8px)' }}>
               {ds.loading ? <Loader2 className="w-6 h-6 animate-spin text-white" />
@@ -445,7 +445,7 @@ function Deck({ side, onOpenSearch }) {
 
       {/* Waveform */}
       <div className="rounded-xl overflow-hidden border border-white/8" style={{ background:'rgba(0,0,0,0.5)' }}>
-        <div className="p-1.5"><WaveStrip side={side} accentColor={accent} /></div>
+        <div className="p-1.5"><WaveStrip side={side} accentColor={accent} onSeek={(pos) => spotifyControls?.isSpotifyDeck ? spotifyControls.onSeek(pos) : seek(side, pos)} /></div>
         <div className="flex justify-between px-2 pb-1">
           <span className="text-[9px] font-mono text-white/25">{fmt(ds.currentTime)}</span>
           <span className="text-[9px] font-mono text-white/25">-{fmt(Math.max(0,(ds.duration||0)-ds.currentTime))}</span>
@@ -456,8 +456,8 @@ function Deck({ side, onOpenSearch }) {
       <div className="flex items-center justify-center gap-3">
         <button className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/15 active:scale-95 transition-all"
           style={{ background:'rgba(255,255,255,0.08)' }}
-          onClick={() => seek(side, Math.max(0, (ds.currentTime||0)-10))}><SkipBack className="w-4 h-4 text-white/70" /></button>
-        <button onClick={() => ds.track && togglePlay(side)} disabled={!ds.track||ds.loading}
+          onClick={() => spotifyControls?.isSpotifyDeck ? spotifyControls.onSeek(Math.max(0,(ds.currentTime||0)-10)) : seek(side, Math.max(0,(ds.currentTime||0)-10))}><SkipBack className="w-4 h-4 text-white/70" /></button>
+        <button onClick={() => { if(spotifyControls?.isSpotifyDeck){ds.playing?spotifyControls.onPause():spotifyControls.onPlay();}else{ds.track&&togglePlay(side);} }} disabled={!ds.track||ds.loading}
           className="w-12 h-12 rounded-full flex items-center justify-center transition-all active:scale-95 disabled:opacity-30"
           style={{ background:accent, boxShadow:ds.playing?`0 0 22px ${accent}99`:`0 0 10px ${accent}44` }}>
           {ds.loading ? <Loader2 className="w-5 h-5 animate-spin text-black" />
@@ -466,7 +466,7 @@ function Deck({ side, onOpenSearch }) {
         </button>
         <button className="w-9 h-9 rounded-full flex items-center justify-center hover:bg-white/15 active:scale-95 transition-all"
           style={{ background:'rgba(255,255,255,0.08)' }}
-          onClick={() => seek(side, Math.min(ds.duration||0, (ds.currentTime||0)+10))}><SkipForward className="w-4 h-4 text-white/70" /></button>
+          onClick={() => spotifyControls?.isSpotifyDeck ? spotifyControls.onSeek(Math.min(ds.duration||0,(ds.currentTime||0)+10)) : seek(side, Math.min(ds.duration||0,(ds.currentTime||0)+10))}><SkipForward className="w-4 h-4 text-white/70" /></button>
       </div>
 
       {/* EQ */}
@@ -592,6 +592,14 @@ export default function DJMixer({ tracks = [], onTrackLoaded }) {
   // Tracks which deck is currently driven by Spotify SDK (null = Tone.js for both)
   const spotifyDeckRef = useRef(null);
 
+  // Spotify transport controls — passed into whichever Deck the SDK owns
+  const spotifyControls = {
+    isSpotifyDeck: true,
+    onPlay:  () => spotifyPlayer?.resume(),
+    onPause: () => spotifyPlayer?.pause(),
+    onSeek:  (posSeconds) => spotifyPlayer?.seek(posSeconds * 1000),
+  };
+
   const handleOpenSearch = (side) => { setSearchSide(side); setSearchOpen(true); };
 
   // Tone.js path — 30s preview or any audio_url
@@ -709,9 +717,9 @@ export default function DJMixer({ tracks = [], onTrackLoaded }) {
 
       {/* 3-column mixer layout */}
       <div className="grid grid-cols-[1fr_138px_1fr] gap-4 p-4 lg:p-5">
-        <Deck side="A" onOpenSearch={handleOpenSearch} />
+        <Deck side="A" onOpenSearch={handleOpenSearch} spotifyControls={spotifyDeckRef.current==="A" ? spotifyControls : null} />
         <MixerCenter queue={queue} onRemoveFromQueue={handleRemoveFromQueue} onLoadFromQueue={handleLoadFromQueue} />
-        <Deck side="B" onOpenSearch={handleOpenSearch} />
+        <Deck side="B" onOpenSearch={handleOpenSearch} spotifyControls={spotifyDeckRef.current==="B" ? spotifyControls : null} />
       </div>
     </div>
   );
