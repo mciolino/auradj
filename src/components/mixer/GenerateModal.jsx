@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, Wand2, Loader2, Music2, Zap, CheckCircle2, AlertCircle } from 'lucide-react';
+import { X, Wand2, Loader2, Zap, CheckCircle2, AlertCircle } from 'lucide-react';
 
 // ── Preset configurations ──────────────────────────────────────────────────────
 const GENRE_PRESETS = [
