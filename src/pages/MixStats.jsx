@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { base44 } from '@/api/base44Client';
 import { Link } from 'react-router-dom';
 import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer, Cell } from 'recharts';
-import { Clock, Play, Heart, Music, TrendingUp, Timer, Loader2 } from 'lucide-react';
+import { Clock, Play, Heart, Music, Timer, Loader2 } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 function StatPill({ icon: Icon, label, value, color = 'text-primary' }) {
