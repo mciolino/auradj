@@ -2,77 +2,46 @@
   "name": "Track",
   "type": "object",
   "properties": {
-    "title": {
-      "type": "string"
+    "title": { "type": "string" },
+    "artist": { "type": "string" },
+    "album": { "type": "string" },
+    "audio_url": { "type": "string" },
+    "preview_url": { "type": "string" },
+    "cover_art_url": { "type": "string" },
+    "genre": { "type": "string" },
+    "mood": { "type": "string" },
+    "bpm": { "type": "number" },
+    "energy": { "type": "number" },
+    "duration_seconds": { "type": "number" },
+    "source": {
+      "type": "string",
+      "enum": ["spotify", "soundcloud", "youtube", "generated", "upload"],
+      "default": "spotify"
     },
-    "audio_url": {
-      "type": "string"
-    },
-    "cover_art_url": {
-      "type": "string"
-    },
-    "genre": {
-      "type": "string"
-    },
-    "mood": {
-      "type": "string"
-    },
-    "bpm": {
-      "type": "number"
-    },
-    "energy": {
-      "type": "number"
-    },
-    "duration_seconds": {
-      "type": "number"
-    },
-    "prompt_used": {
-      "type": "string"
-    },
+    "spotify_id": { "type": "string" },
+    "spotify_uri": { "type": "string" },
+    "soundcloud_id": { "type": "string" },
+    "external_url": { "type": "string" },
+    "prompt_used": { "type": "string" },
     "tags": {
       "type": "array",
-      "items": {
-        "type": "string"
-      }
+      "items": { "type": "string" }
     },
-    "play_count": {
-      "type": "number",
-      "default": 0
-    },
-    "likes": {
-      "type": "number",
-      "default": 0
-    },
-    "is_public": {
-      "type": "boolean",
-      "default": true
-    },
-    "session_id": {
-      "type": "string"
-    }
+    "play_count": { "type": "number", "default": 0 },
+    "likes": { "type": "number", "default": 0 },
+    "is_public": { "type": "boolean", "default": true },
+    "session_id": { "type": "string" }
   },
-  "required": [
-    "title"
-  ],
+  "required": ["title"],
   "rls": {
-    "create": {
-      "created_by_id": "{{user.id}}"
-    },
+    "create": { "created_by_id": "{{user.id}}" },
     "read": {
       "$or": [
-        {
-          "data.is_public": true
-        },
-        {
-          "created_by_id": "{{user.id}}"
-        }
+        { "data.is_public": true },
+        { "created_by_id": "{{user.id}}" }
       ]
     },
-    "update": {
-      "created_by_id": "{{user.id}}"
-    },
-    "delete": {
-      "created_by_id": "{{user.id}}"
-    }
+    "update": { "created_by_id": "{{user.id}}" },
+    "delete": { "created_by_id": "{{user.id}}" }
   }
 }
