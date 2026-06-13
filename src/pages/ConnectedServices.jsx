@@ -107,27 +107,33 @@ export default function ConnectedServices() {
       if (code && me) {
         setExchanging(true);
         window.history.replaceState({}, '', '/services');
-        const res = await base44.functions.invoke('spotifyAuth', { action: 'exchange', code });
-        if (res.data?.success) {
-          const updated = await base44.auth.me();
-          setConnected(updated.connected_services || {});
-          toast.success(`Spotify connected as ${res.data.display_name}!`);
-          reconnect();
+        try {
+          const res = await base44.functions.invoke('spotifyAuth', { action: 'exchange', code });
+          if (res.data?.success) {
+            const updated = await base44.auth.me();
+            setConnected(updated.connected_services || {});
+            toast.success(`Spotify connected as ${res.data.display_name}!`);
+            reconnect();
 
-          // Immediately kick off taste analysis in background
-          setAnalyzing(true);
-          try {
-            await base44.functions.invoke('spotifyAnalyze', { action: 'analyze' });
-            toast.success('🎵 Taste profile built — your For You mix is ready!', { duration: 4000 });
-          } catch (e) {
-            console.warn('[ConnectedServices] analyze failed:', e);
-          } finally {
-            setAnalyzing(false);
+            // Immediately kick off taste analysis in background
+            setAnalyzing(true);
+            try {
+              await base44.functions.invoke('spotifyAnalyze', { action: 'analyze' });
+              toast.success('🎵 Taste profile built — your For You mix is ready!', { duration: 4000 });
+            } catch (e) {
+              console.warn('[ConnectedServices] analyze failed:', e);
+            } finally {
+              setAnalyzing(false);
+            }
+          } else {
+            toast.error(res.data?.error || 'Spotify connection failed. Try again.');
           }
-        } else {
-          toast.error('Spotify connection failed. Try again.');
+        } catch (e) {
+          console.error('[ConnectedServices] Spotify exchange failed:', e);
+          toast.error(e?.response?.data?.error || e?.message || 'Spotify connection failed. Check Spotify app redirect settings.');
+        } finally {
+          setExchanging(false);
         }
-        setExchanging(false);
       }
 
       setLoading(false);
