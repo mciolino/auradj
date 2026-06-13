@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { Link, Copy, Check } from 'lucide-react';
+import { Copy, Check } from 'lucide-react';
 
 const PLATFORMS = [
   {
