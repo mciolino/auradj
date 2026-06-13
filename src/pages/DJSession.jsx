@@ -2,46 +2,28 @@ import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
 import { base44 } from '@/api/base44Client';
 import { Button } from '@/components/ui/button';
-import { MessageSquare, Globe, Lock, Radio, Loader2, Wand2 } from 'lucide-react';
+import { MessageSquare, Globe, Radio, Loader2, Wand2, Save } from 'lucide-react';
 import DJMixer from '@/components/mixer/DJMixer';
-import GenerateModal from '@/components/mixer/GenerateModal';
 import DJChatPanel from '@/components/session/DJChatPanel';
 import ForYouPanel from '@/components/session/ForYouPanel';
-import { usePlayer } from '@/context/PlayerContext';
 import { motion, AnimatePresence } from 'framer-motion';
 import { toast } from 'sonner';
 
 export default function DJSession() {
   const { id } = useParams();
-  const { play } = usePlayer();
 
-  const [session,       setSession]       = useState(null);
-  const [tracks,        setTracks]        = useState([]);
-  const [isGenerating,  setIsGenerating]  = useState(false);
-  const [showGenModal,  setShowGenModal]  = useState(false);
-  const [isChatOpen,    setIsChatOpen]    = useState(false);
-  const [isForYouOpen,  setIsForYouOpen]  = useState(false);
-  const [isSaving,      setIsSaving]      = useState(false);
-  const [user,          setUser]          = useState(null);
-
-  const [genParams, setGenParams] = useState({
-    genre: 'Electronic', mood: 'Energy Boost', bpm: 128, energy: 7
-  });
+  const [session,      setSession]      = useState(null);
+  const [tracks,       setTracks]       = useState([]);
+  const [isChatOpen,   setIsChatOpen]   = useState(false);
+  const [isForYouOpen, setIsForYouOpen] = useState(false);
+  const [isSaving,     setIsSaving]     = useState(false);
 
   // ── Load session ─────────────────────────────────────────────────────────────
   useEffect(() => {
-    base44.auth.me().then(setUser).catch(() => {});
     if (id) {
       base44.entities.DJSession.filter({ id }).then(res => {
         if (res[0]) {
           setSession(res[0]);
-          setGenParams(p => ({
-            ...p,
-            genre:  res[0].genre         || p.genre,
-            mood:   res[0].mood          || p.mood,
-            bpm:    res[0].bpm           || p.bpm,
-            energy: res[0].energy_level  || p.energy,
-          }));
           if (res[0].track_ids?.length > 0) {
             Promise.all(
               res[0].track_ids.map(tid =>
@@ -52,162 +34,75 @@ export default function DJSession() {
         }
       });
     } else {
-      setSession({ title: 'New Session', track_ids: [], is_public: false, is_saved: false });
+      setSession({ title: 'New Mix', track_ids: [], is_public: false, is_saved: false });
     }
   }, [id]);
 
-  // ── Save track to entity + session ───────────────────────────────────────────
-  const persistTrack = async (trackData) => {
-    const { title, genre, bpm, audio_url, cover_art_url, source, generated } = trackData;
-
-    const saved = await base44.entities.Track.create({
-      title:        title        || 'Untitled',
-      genre:        genre        || genParams.genre,
-      mood:         genParams.mood,
-      bpm:          bpm          || genParams.bpm,
-      energy:       genParams.energy,
-      prompt_used:  trackData.prompt || '',
-      cover_art_url: cover_art_url || null,
-      tags:         [genre, source === 'suno' ? 'Suno AI' : source === 'huggingface' ? 'MusicGen' : 'Demo'].filter(Boolean),
-      is_public:    false,
-      audio_url,
-    });
-
-    setTracks(prev => [...prev, saved]);
-
-    if (session?.id) {
-      const updatedIds = [...(session.track_ids || []), saved.id];
-      await base44.entities.DJSession.update(session.id, {
-        track_ids: updatedIds,
-        genre: genre || genParams.genre,
-        bpm:   bpm   || genParams.bpm,
-      });
-      setSession(prev => ({ ...prev, track_ids: updatedIds }));
-    } else {
-      const newSession = await base44.entities.DJSession.create({
-        title: `${genre || genParams.genre} Session`,
-        genre:  genre  || genParams.genre,
-        mood:   genParams.mood,
-        bpm:    bpm    || genParams.bpm,
-        energy_level: genParams.energy,
-        track_ids: [saved.id],
-        is_public: false,
-        is_saved:  false,
-      });
-      setSession(newSession);
-      window.history.replaceState({}, '', `/session/${newSession.id}`);
-    }
-
-    return saved;
-  };
-
-  // ── Handle track coming out of GenerateModal ──────────────────────────────────
-  const handleModalGenerated = async (trackData) => {
-    // trackData already has audio_url from the backend function
-    setIsGenerating(true);
+  // ── Save a streamed track into the session ───────────────────────────────────
+  const saveTrackToSession = async (track) => {
     try {
-      // Generate cover art in parallel
-      const imgRes = await base44.integrations.Core.GenerateImage({
-        prompt: `Abstract minimal album art for ${trackData.genre} music, electric ${trackData.genre === 'Synthwave' ? 'pink' : 'lime'} tones, no text, dark background`
-      }).catch(() => null);
+      // Avoid duplicates
+      const alreadySaved = tracks.some(t => t.spotify_id === track.spotify_id || t.id === track.id);
+      if (alreadySaved) return track;
 
-      const saved = await persistTrack({ ...trackData, cover_art_url: imgRes?.url || null });
-      play(saved, []);
-
-      const sourceLabel = { suno: 'Suno AI 🎵', huggingface: 'MusicGen 🤗', demo: 'Demo track' }[trackData.source] || '';
-      toast.success(`"${saved.title}" ready — ${sourceLabel}`);
-    } catch (err) {
-      toast.error('Failed to save track');
-      console.error(err);
-    } finally {
-      setIsGenerating(false);
-    }
-  };
-
-  // ── Quick-generate (from DJMixer header button / chat) ────────────────────────
-  const generateTrack = async (overrideParams = {}) => {
-    // If called with no args, open the modal instead
-    if (Object.keys(overrideParams).length === 0) {
-      setShowGenModal(true);
-      return;
-    }
-
-    setIsGenerating(true);
-    try {
-      const { genre, mood, bpm, energy } = { ...genParams, ...overrideParams };
-      const userPrompt = overrideParams.prompt || `${mood} ${genre} music at ${bpm} BPM`;
-
-      // AI metadata
-      const aiRes = await base44.integrations.Core.InvokeLLM({
-        prompt: `Generate metadata for an AI DJ track.
-Genre: ${genre}, Mood: ${mood}, BPM: ${bpm}, Energy: ${energy}/10
-User request: "${userPrompt}"
-Return JSON: title (creative track name), prompt (detailed 2-sentence music gen prompt for Suno AI), tags (3 tags)`,
-        response_json_schema: {
-          type: 'object',
-          properties: {
-            title:  { type: 'string' },
-            prompt: { type: 'string' },
-            tags:   { type: 'array', items: { type: 'string' } },
-          }
-        }
+      const saved = await base44.entities.Track.create({
+        title:           track.title,
+        artist:          track.artist       || '',
+        album:           track.album        || '',
+        genre:           track.genre        || '',
+        bpm:             track.bpm          || 0,
+        duration_seconds: track.duration_seconds || 0,
+        cover_art_url:   track.cover_art_url || null,
+        audio_url:       track.audio_url    || track.preview_url || null,
+        spotify_id:      track.spotify_id   || null,
+        spotify_uri:     track.spotify_uri  || null,
+        source:          track.source       || 'spotify',
+        is_public:       false,
+        tags:            [track.genre, track.source].filter(Boolean),
       });
 
-      const trackTitle = aiRes?.title  || `${mood} ${genre}`;
-      const genPrompt  = aiRes?.prompt || userPrompt;
+      setTracks(prev => [...prev, saved]);
 
-      // Cover art
-      const imgRes = await base44.integrations.Core.GenerateImage({
-        prompt: `Abstract minimal album art for ${mood} ${genre} music. Electric, modern, no text.`
-      }).catch(() => null);
-
-      // Audio via generateMusic backend (Suno → HF → demo chain)
-      let audioUrl = null, source = 'demo';
-      try {
-        const musicRes = await base44.functions.invoke('generateMusic', {
-          prompt: genPrompt, genre, bpm, instrumental: true
+      if (session?.id) {
+        const updatedIds = [...(session.track_ids || []), saved.id];
+        await base44.entities.DJSession.update(session.id, { track_ids: updatedIds });
+        setSession(prev => ({ ...prev, track_ids: updatedIds }));
+      } else {
+        const newSession = await base44.entities.DJSession.create({
+          title:    `${track.genre || 'DJ'} Mix`,
+          genre:    track.genre || '',
+          track_ids: [saved.id],
+          is_public: false,
+          is_saved:  false,
         });
-        if (musicRes?.data?.success) {
-          audioUrl = musicRes.data.audio_url;
-          source   = musicRes.data.source || 'demo';
-        }
-      } catch (_) {}
-
-      if (!audioUrl) {
-        const demos = ['https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3','https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3','https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3'];
-        audioUrl = demos[Math.abs(Array.from(genPrompt).reduce((a,c)=>a+c.charCodeAt(0),0)) % demos.length];
-        source = 'demo';
+        setSession(newSession);
+        window.history.replaceState({}, '', `/session/${newSession.id}`);
       }
 
-      const saved = await persistTrack({
-        title: trackTitle, genre, bpm, audio_url: audioUrl,
-        cover_art_url: imgRes?.url || null, source, prompt: genPrompt,
-        tags: aiRes?.tags || [genre, mood],
-      });
-
-      play(saved, []);
-
-      const sourceLabel = { suno:'Suno AI 🎵', huggingface:'MusicGen 🤗', demo:'demo audio' }[source] || '';
-      toast.success(`"${trackTitle}" ready — ${sourceLabel}`);
+      return saved;
     } catch (err) {
-      console.error(err);
-      toast.error('Failed to generate track');
-    } finally {
-      setIsGenerating(false);
+      console.error('[DJSession] saveTrackToSession:', err);
+      return track;
     }
   };
 
-  // ── Publish ───────────────────────────────────────────────────────────────────
-  const saveAndPublish = async () => {
+  // ── Publish ──────────────────────────────────────────────────────────────────
+  const publish = async () => {
     if (!session?.id) return;
     setIsSaving(true);
-    await base44.entities.DJSession.update(session.id, {
-      is_saved: true, is_public: true,
-      duration_minutes: Math.ceil(tracks.length * 3.5),
-    });
-    setSession(prev => ({ ...prev, is_saved: true, is_public: true }));
-    toast.success('Mix published! 🎉');
-    setIsSaving(false);
+    try {
+      await base44.entities.DJSession.update(session.id, {
+        is_saved: true,
+        is_public: true,
+        duration_minutes: Math.ceil(tracks.reduce((a, t) => a + (t.duration_seconds || 180), 0) / 60),
+      });
+      setSession(prev => ({ ...prev, is_saved: true, is_public: true }));
+      toast.success('Mix published! 🎉');
+    } catch (err) {
+      toast.error('Failed to publish mix');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -242,24 +137,24 @@ Return JSON: title (creative track name), prompt (detailed 2-sentence music gen 
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm"
               className="gap-1.5 rounded-full h-8 border-white/20 text-white/70 hover:text-white"
-              onClick={() => { setIsForYouOpen(!isForYouOpen); setIsChatOpen(false); }}>
+              onClick={() => { setIsForYouOpen(v => !v); setIsChatOpen(false); }}>
               <Wand2 className="w-3.5 h-3.5" />
               <span className="hidden sm:inline text-xs">For You</span>
             </Button>
             <Button variant="outline" size="sm"
               className="gap-1.5 rounded-full h-8 border-white/20 text-white/70 hover:text-white"
-              onClick={() => { setIsChatOpen(!isChatOpen); setIsForYouOpen(false); }}>
+              onClick={() => { setIsChatOpen(v => !v); setIsForYouOpen(false); }}>
               <MessageSquare className="w-3.5 h-3.5" />
               <span className="hidden sm:inline text-xs">AI Chat</span>
             </Button>
-            {session?.id && (
-              <Button size="sm" className="gap-1.5 rounded-full h-8"
-                style={{ background: '#C8FF00', color: '#000' }}
-                onClick={saveAndPublish} disabled={isSaving}>
-                {isSaving ? <Loader2 className="w-3.5 h-3.5 animate-spin" /> : <Globe className="w-3.5 h-3.5" />}
-                <span className="hidden sm:inline text-xs font-bold">Publish</span>
-              </Button>
-            )}
+            <Button size="sm" className="gap-1.5 rounded-full h-8"
+              style={{ background: '#C8FF00', color: '#000' }}
+              onClick={publish} disabled={isSaving || !tracks.length}>
+              {isSaving
+                ? <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                : <Globe className="w-3.5 h-3.5" />}
+              <span className="hidden sm:inline text-xs font-bold">Publish</span>
+            </Button>
           </div>
         </div>
 
@@ -270,33 +165,25 @@ Return JSON: title (creative track name), prompt (detailed 2-sentence music gen 
               {isChatOpen && (
                 <DJChatPanel
                   session={session}
-                  sessionContext={{ genre: genParams.genre, mood: genParams.mood, bpm: genParams.bpm, energy: genParams.energy }}
-                  onGenerateTrack={generateTrack}
+                  sessionContext={{ tracks: tracks.map(t => t.title), genre: tracks[0]?.genre }}
+                  onGenerateTrack={() => {}}
                 />
               )}
               {isForYouOpen && (
                 <ForYouPanel
-                  onApplyParams={(p) => { setGenParams(prev => ({ ...prev, ...p })); setIsForYouOpen(false); toast('Taste DNA applied! 🎯'); }}
+                  onApplyParams={() => setIsForYouOpen(false)}
                 />
               )}
             </motion.div>
           )}
         </AnimatePresence>
 
-        {/* DJ Mixer */}
+        {/* Stream-first DJ Mixer */}
         <DJMixer
           tracks={tracks}
-          onGenerate={() => setShowGenModal(true)}
-          isGenerating={isGenerating}
+          onTrackLoaded={saveTrackToSession}
         />
       </div>
-
-      {/* Generate Modal */}
-      <GenerateModal
-        isOpen={showGenModal}
-        onClose={() => setShowGenModal(false)}
-        onGenerated={handleModalGenerated}
-      />
     </div>
   );
 }
