@@ -8,6 +8,7 @@ import { AuthProvider, useAuth } from '@/lib/AuthContext';
 import UserNotRegisteredError from '@/components/UserNotRegisteredError';
 import { PlayerProvider } from '@/context/PlayerContext';
 import { SpotifyProvider } from '@/context/SpotifyContext';
+import { MixerProvider } from '@/context/MixerContext';
 import AppLayout from '@/components/layout/AppLayout';
 
 // Auth Pages
@@ -76,11 +77,13 @@ function App() {
       <QueryClientProvider client={queryClientInstance}>
         <PlayerProvider>
           <SpotifyProvider>
-            <Router>
-              <AuthenticatedApp />
-            </Router>
-            <Toaster />
-            <Sonner position="bottom-center" />
+            <MixerProvider>
+              <Router>
+                <AuthenticatedApp />
+              </Router>
+              <Toaster />
+              <Sonner position="bottom-center" />
+            </MixerProvider>
           </SpotifyProvider>
         </PlayerProvider>
       </QueryClientProvider>
