@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useSpotify } from '@/context/SpotifyContext';
 import { Button } from '@/components/ui/button';
-import { Play, Pause, Loader2, Search, Music } from 'lucide-react';
+import { Play, Pause, Loader2, Search } from 'lucide-react';
 import { Link } from 'react-router-dom';
 
 export default function SpotifyPreviewPanel({ genre, mood, prompt }) {
