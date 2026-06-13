@@ -1,6 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { CheckCircle2, ExternalLink, Zap } from 'lucide-react';
+import { CheckCircle2, Zap } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export default function ServiceCard({ service, isConnected, onConnect, onDisconnect }) {
