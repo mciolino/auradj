@@ -7,8 +7,8 @@ import TrackSearch from './TrackSearch';
 import { toast } from 'sonner';
 import {
   Play, Pause, SkipForward, SkipBack, Loader2,
-  Plus, Minus, Music2, Search, Volume2, ListMusic,
-  Headphones, Disc3, Circle, Square, ChevronRight, X,
+  Plus, Minus, Search, ListMusic,
+  Headphones, Disc3, Circle, Square, X,
 } from 'lucide-react';
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
