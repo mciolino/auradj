@@ -5,7 +5,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import {
   Search, Music2, SlidersHorizontal, Users, Flame,
-  Clock, TrendingUp, Sparkles, Github, X
+  Clock, TrendingUp, X
 } from 'lucide-react';
 import MixCard from '@/components/common/MixCard';
 import GenreSelector from '@/components/session/GenreSelector';
